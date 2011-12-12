@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<title>SudokuSolverJS</title>
+	<style type='text/css'>
+		* { margin: 0; padding: 0; border: 0; }
+		#output { margin: 50px auto; overflow: hidden; clear: both; }
+		.input { width: 50px; height: 50px; padding:1px; background: #000; display: inline; float: left; }
+		.input input { width: 50px; height: 50px; text-align: center; font-size:30px; }
+		input[type=button] { padding: 10px; font-size: 20px; margin: 0 auto; display: block;overflow: hidden; clear: both;  }
+	</style>
+</head>
+
+<body>
+
+<div id='output'>
+</div>
+
+	<script type='text/javascript'>
+		var SudokuSolver = function() {
+			this.gridSize = 3;
+			this.dimensions = 2;
+			this.maxIter = 10;
+			this.currentState = [];
+			this.temporalState = [];
+			this.obj = {};
+			this.localId = new Date().getTime() + Math.floor(Math.random()*9999);
+		}
+		
+		SudokuSolver.prototype.init = function(obj) {
+			var self = this;
+			this.obj = obj;
+			
+			// draw grid, create arrays
+			this.gridProcess(function(i,j) {
+				self.obj.innerHTML += "<div class='input'><input type='text' id='sudoku_"+self.localId+"_"+i+"-"+j+"' /></div>";
+				if(j == 0) {
+					self.currentState[i] = [];
+					self.temporalState[i] = [];
+				}
+				self.currentState[i][j] = "";
+				self.temporalState[i][j] = "";
+			});
+			
+			var solveButton = document.createElement('input');
+			solveButton.setAttribute('type','button');
+			solveButton.setAttribute('value','Solve');
+			solveButton.addEventListener('click',function() {
+				self.solve();
+			});
+			this.obj.parentNode.appendChild(solveButton);
+			
+			/*
+			// Demo data
+			var demoData = "070390408002800100091047006708405000010000050000102604100520740007004300503078060";
+			demoData = demoData.split("");
+			var z = 0;
+			this.gridProcess(function(i,j) {
+				if(demoData[z] != 0 && typeof demoData[z] != "undefined") {
+					document.getElementById('sudoku_'+self.localId+'_'+i+'-'+j).value = demoData[z];
+				}
+				z++;
+			});
+			*/
+		
+			this.obj.setAttribute('style','width:'+(52*Math.pow(this.gridSize,this.dimensions))+'px;height:'+52*Math.pow(this.gridSize,this.dimensions)+'px;');
+		}
+		
+		SudokuSolver.prototype.solve =  function() {
+			var self = this;
+			
+			this.iter = 0;
+			
+			// get each value of grid and put in currentState
+			this.gridProcess(function(i,j) {
+				self.currentState[i][j] = document.getElementById('sudoku_'+self.localId+'_'+i+'-'+j).value;
+
+			});
+			
+			this.solveState();
+		}
+		
+		SudokuSolver.prototype.solveState = function() {
+			var self = this;
+			// for each grid space check possibilities
+			// store them in temporalState
+			this.gridProcess(function(i,j) {
+				if(self.currentState[i][j] == "") {
+					for(var k = 1; k <= Math.pow(self.gridSize, self.dimensions); k++) {
+						// see if this can go here?
+						var found = false;
+				
+						// check row
+						for(var h = 0; h < Math.pow(self.gridSize, self.dimensions); h++) {
+							if(self.currentState[h][j] == k && h != i) {
+								found = true;
+							}
+							if(self.currentState[i][h] == k && h != j) {
+								found = true;
+							}
+						
+							var offsetX = Math.floor(i/3)*3+Math.floor(h/3);
+							var offsetY = Math.floor(j/3)*3+h%3;
+						
+							if(self.currentState[offsetX][offsetY] == k && offsetX != i && offsetY != j) {
+								found = true;
+							}
+						}
+					
+						if(!found) {
+							self.temporalState[i][j] += k;
+						}
+					}
+				}
+			});
+			
+			this.anyUpdates = false;
+			// for each temporal check if only one possible
+			// then update currentState
+			this.gridProcess(function(i,j) {
+				if(self.temporalState[i][j] < 10 && self.temporalState[i][j] != "") {
+					self.currentState[i][j] = self.temporalState[i][j];
+					self.anyUpdates = true;
+				}
+			});
+			
+			// flag if any updates, if yes
+			// then loop, if not, then don't.
+			if(this.anyUpdates && this.iter < 10) {
+				// tidy up tempory state
+				this.gridProcess(function(i,j) {
+					self.temporalState[i][j] = "";
+				});
+				this.iter++;
+				this.solveState();
+			} else {
+				// update display
+				this.gridProcess(function(i,j) {
+					document.getElementById('sudoku_'+self.localId+'_'+i+'-'+j).value = self.currentState[i][j];
+				});
+			}
+		}
+	
+		SudokuSolver.prototype.gridProcess = function(callback) {
+			for(var i = 0; i < Math.pow(this.gridSize,this.dimensions); i++) {
+				for(var j = 0; j < Math.pow(this.gridSize,this.dimensions); j++) {
+					callback(i,j);
+				}
+			}
+		}
+		
+		var sudokuSolver = new SudokuSolver();
+		sudokuSolver.init(document.getElementById('output'));
+		
+	</script>
+
+</body>
+</html>
