@@ -6,11 +6,12 @@
 <head>
 	<title>SudokuSolverJS</title>
 	<style type='text/css'>
-		* { margin: 0; padding: 0; border: 0; }
+		* { margin: 0; padding: 0; border: 0; font-family: helvetica; color: #222; }
+		body { background:#f7f7f7; }
 		#output { margin: 50px auto; overflow: hidden; clear: both; }
-		.input { width: 50px; height: 50px; padding:1px; background: #000; display: inline; float: left; }
-		.input input { width: 50px; height: 50px; text-align: center; font-size:30px; }
-		input[type=button] { padding: 10px; font-size: 20px; margin: 0 auto; display: block;overflow: hidden; clear: both;  }
+		.input { width: 50px; height: 50px; padding:1px; background: #888; display: inline; float: left; }
+		.input input { width: 50px; height: 50px; text-align: center; font-size:30px; background: #fff; }
+		.solveButton { background: #222; color:#fff; padding: 10px; font-size: 20px; display:block; width: 100px; margin: 0 auto; overflow: hidden; clear: both;  }
 	</style>
 </head>
 
@@ -46,6 +47,7 @@
 			});
 			
 			var solveButton = document.createElement('input');
+			solveButton.setAttribute('class','solveButton');
 			solveButton.setAttribute('type','button');
 			solveButton.setAttribute('value','Solve');
 			solveButton.addEventListener('click',function() {
@@ -53,7 +55,6 @@
 			});
 			this.obj.parentNode.appendChild(solveButton);
 			
-			/*
 			// Demo data
 			var demoData = "070390408002800100091047006708405000010000050000102604100520740007004300503078060";
 			demoData = demoData.split("");
@@ -63,28 +64,35 @@
 					document.getElementById('sudoku_'+self.localId+'_'+i+'-'+j).value = demoData[z];
 				}
 				z++;
-			});
-			*/
+			});		
 		
 			this.obj.setAttribute('style','width:'+(52*Math.pow(this.gridSize,this.dimensions))+'px;height:'+52*Math.pow(this.gridSize,this.dimensions)+'px;');
 		}
 		
 		SudokuSolver.prototype.solve =  function() {
+			console.log('started solve...')
 			var self = this;
 			
+			this.start = new Date().getTime();
 			this.iter = 0;
 			
 			// get each value of grid and put in currentState
+
+			console.log('loading grid...')
+			var grid_data = "";
 			this.gridProcess(function(i,j) {
 				self.currentState[i][j] = document.getElementById('sudoku_'+self.localId+'_'+i+'-'+j).value;
-
+				grid_data += self.currentState[i][j];
 			});
+			console.log(grid_data)
 			
 			this.solveState();
 		}
 		
 		SudokuSolver.prototype.solveState = function() {
 			var self = this;
+
+			console.log('solve iteration')
 			// for each grid space check possibilities
 			// store them in temporalState
 			this.gridProcess(function(i,j) {
@@ -137,10 +145,12 @@
 				this.iter++;
 				this.solveState();
 			} else {
+				console.log('finished solve attempt.');
 				// update display
 				this.gridProcess(function(i,j) {
 					document.getElementById('sudoku_'+self.localId+'_'+i+'-'+j).value = self.currentState[i][j];
 				});
+				console.log("Solved in "+(new Date().getTime() - self.start)+" milliseconds");
 			}
 		}
 	
